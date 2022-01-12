@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.guruguruzom.cookiesession.vo.UserVo;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -29,7 +31,8 @@ public class LoginController {
 		response.put("success", "success");
 		response.put("userSerialId", userVo.getUserSerial());
 		HttpSession session = request.getSession();
-		session.setAttribute("userSerialId", Integer.toString(userVo.getUserSerial()));
+		session.setAttribute("userSerial", userVo.getUserSerial());
+		return response;
 	}
 
 	@GetMapping(value = { "main", "/main" })
@@ -44,11 +47,6 @@ public class LoginController {
 					cookieUserSeq = (String) cookie.getValue();
 				}
 			}
-		}
-
-		try {
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
 		}
 
 		String cookieStr = null;
