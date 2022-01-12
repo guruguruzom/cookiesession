@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+<meta charset="UTF-8">
+<title>LLBP</title>
+<th:block layout:fragment="css"><link rel="stylesheet" th:href="@{css/common.css}"/></th:block>
+<script th:src="@{/js/jquery-3.3.1.min.js}"></script>
+<script th:src="@{/js/common.js}"></script>
+<script th:src="@{/js/lottie.min.js}"></script>
+<script th:src="@{/js/jquery.bpopup.min.js}"></script>
+<script th:src="@{/js/sha256.min.js}"></script>
+
+<script th:inline="javascript">
+	var setCookie = function (cookieName, value, exdays){
+	    var exdate = new Date();
+	    exdate.setDate(exdate.getDate() + exdays);
+	    var cookieValue = escape(value) + ((exdays==null) ? "" : "; expires=" + exdate.toGMTString());
+	    document.cookie = cookieName + "=" + cookieValue;
+	}
+	 
+	var deleteCookie = function (cookieName){
+	    var expireDate = new Date();
+	    expireDate.setDate(expireDate.getDate() - 1);
+	    document.cookie = cookieName + "= " + "; expires=" + expireDate.toGMTString();
+	}
+	
+	var getCookie = function (cookieName) {
+	    cookieName = cookieName + '=';
+	    var cookieData = document.cookie;
+	    var start = cookieData.indexOf(cookieName);
+	    var cookieValue = '';
+	    if(start != -1){
+	        start += cookieName.length;
+	        var end = cookieData.indexOf(';', start);
+	        if(end == -1)end = cookieData.length;
+	        cookieValue = cookieData.substring(start, end);
+	    }
+	    return unescape(cookieValue);
+	}
+	var contextPath = /*[[@{/}]]*/'';
+
+	var autoLogin = function(){
+		var sessionId = sessionStorage.getItem("userSerialId");
+		var cookieId = getCookie("userSaveId");//저장된 쿠기값 가져오기
+		if(cookieId != null && cookieId != ""){
+			loadMain(cookieId);
+		} else if(sessionId != null && sessionId != null){
+			loadMain(sessionId);
+		}
+	}
+	
+	var registCookie = function(userSerialId){
+		//var userInputId = getCookie("userSaveId");//저장된 쿠기값 가져오기
+		 
+		 if($("#idSaveCheck").is(":checked")){ // ID 저장하기 체크했을 때,
+		        setCookie("userSaveId", userSerialId, 7); // 7일 동안 쿠키 보관
+		}else{ // ID 저장하기 체크 해제 시,
+		        deleteCookie("userSaveId");
+		}
+		loadMain(userSerialId);
+	}
+	
+	var loadMain = function(userInputId){
+		sessionStorage.setItem("userSerialId", userInputId);
+		location.href = "/main";
+	}
+
+	var login = function(){
+		if(!loginValidation()){
+			return;
+		}
+		userDefault = {
+			userID:$("#identifier").val(),
+			userPassword:sha256($("#userPw").val())
+		}
+		userDefault = {
+			userID:$("#identifier").val(),
+			userPassword:sha256($("#userPw").val())
+		}
+		CommonJS.callAjax('userlogin', 'POST', JSON.stringify(userDefault), 
+			(response, status, xhr) => {
+				if(response.serviceCode == 100){
+					registCookie(response.result);
+				} else {
+					$("#accountError > span").remove();
+					$("#accountError").append("<span>아이디 또는 비밀번호가 틀렸습니다.</span>");
+				}
+				console.log(response, status, xhr);
+			}, (xhr, status, errorThrown) => {
+				console.log(xhr, status, errorThrown);
+				$("#accountError > span").remove();
+				$("#accountError").append("<span>서버 에러</span>");
+			})
+	}
+	
+	
+	
+	var loginValidation = function(){
+		$("#accountError > span").remove();
+		if($("#identifier").val() == ""){
+			$("#accountError").append("<span>아이디를 입력하세요.</span>");
+			return false;	
+		}
+		if($("#userPw").val() == ""){
+			$("#accountError").append("<span>비밀번호를를 입력하세요</span>");
+			return false;	
+		}
+		return true;
+	}
+	
+	var loginPage = (function() {
+				var init = function() {
+				};
+				
+				var loginPageEvent = function() {
+					$('#btnLogin').click((e) => {
+						e.preventDefault();
+						login();
+					});
+					
+					$('#identifier,#userPw').keypress((e) => {
+						if(e.keyCode == 13) {
+							login();
+						}
+					});
+				};
+				return {
+					init : function() {
+						init();
+						loginPageEvent();
+					}
+				}
+			}());
+			$(document).ready(function() {
+				loginPage.init();
+				//autoLogin();
+			});
+</script>
+</head>
+	<body class="bgColor">
+		<div class="content" layout:fragment="content">
+			
+			<div class="login">
+				<div class="cardLabel">
+					<div class="displayTable" style="height:1px"></div>
+					
+					<div>
+						<div>
+							<div class="displayTable loginText mt60">Login</div>
+						</div>
+					</div>
+					<dl class="formList ml60 mt40" >
+						<dt>아이디</dt>
+						<dd style="width:280px">
+							<div class="w280">
+								<div class="inpArea">
+									<div>
+										<input id="identifier" type="tel" class="inpText tal" maxlength="20">
+									</div>
+								</div>
+							</div>
+						</dd>
+					</dl>
+					<dl class="formList ml60 mt20">
+						<dt>비밀번호</dt>
+						<dd style="width:280px"> 
+							<div class="w280">
+								<div class="inpArea">
+									<div>
+										<input id="userPw" type="password" class="inpText tal" maxlength="20">
+									</div>
+								</div>
+							</div>
+						</dd>
+					</dl>
+					<div class="displayTable mt12" style="width: 100%;">
+						<div id="accountError" class="accountError tac"><span></span></div>
+					</div>
+					<div class="ml60 mt20">
+						<input id="idSaveCheck" type="checkbox" checked>아이디 저장
+					</div>
+					<div class="ml60" style="width: 100%;">
+						<div id="btnLogin" class="btnLogin mt20"> 
+							<div>로그인</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
+
